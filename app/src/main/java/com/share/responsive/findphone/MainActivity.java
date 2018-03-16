@@ -1,6 +1,12 @@
 package com.share.responsive.findphone;
 
 import android.Manifest;
+import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.media.ToneGenerator;
+import android.net.Uri;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +28,34 @@ public class MainActivity extends AppCompatActivity {
             Log.i("TAG", "MY_PERMISSIONS_REQUEST_SMS_RECEIVE --> YES");
         }
     }
+    public void PlaySound(){
+        Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+
+        if(alert == null){
+            // alert is null, using backup
+            alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+            // I can't see this ever being null (as always have a default notification)
+            // but just incase
+            if(alert == null) {
+                // alert backup is null, using 2nd backup
+                alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            }
+        }
+
+        final Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), alert);
+        r.play();
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+               if(r.isPlaying()){
+                   r.stop();
+               }
+            }
+        }, 10000);
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,13 +65,20 @@ public class MainActivity extends AppCompatActivity {
 
         SmsReceiver.bindListener(new SmsListener() {
             @Override
-            public void messageReceived(String messageText) {
+            public void messageReceived(String messageText,String sender) {
                 //From the received text string you may do string operations to get the required OTP
                 //It depends on your SMS format
                 Log.e("Message",messageText);
-                Toast.makeText(MainActivity.this,"Message: "+messageText,Toast.LENGTH_LONG).show();
+                if(messageText.equals("wake me up now")){
+                AudioManager audioManager=(AudioManager)getSystemService(getApplicationContext().AUDIO_SERVICE);
+                audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                audioManager.setStreamVolume(AudioManager.STREAM_RING,audioManager.getStreamMaxVolume(AudioManager.STREAM_RING),0);
+                Toast.makeText(MainActivity.this,"Message: "+messageText+" from:"+sender,Toast.LENGTH_LONG).show();
+                PlaySound();
+                }
 
-                // If your OTP is six digits number, you may use the below code
+
+               /* // If your OTP is six digits number, you may use the below code
                 Pattern pattern = Pattern.compile(OTP_REGEX);
                 Matcher matcher = pattern.matcher(messageText);
                 String otp="";
@@ -45,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
                 {
                     otp = matcher.group();
                 }
-                Toast.makeText(MainActivity.this,"OTP: "+ otp ,Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this,"OTP: "+ otp ,Toast.LENGTH_LONG).show();*/
 
             }
         });

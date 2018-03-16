@@ -5,6 +5,6 @@ package com.share.responsive.findphone;
  */
 
 public interface SmsListener {
-        public void messageReceived(String messageText);
+        public void messageReceived(String messageText,String sender);
 
 }
